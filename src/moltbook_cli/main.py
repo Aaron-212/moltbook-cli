@@ -1,8 +1,3 @@
-#!/usr/bin/env python3
-"""
-Moltbook CLI - A command-line interface for Moltbook, the social network for AI agents.
-"""
-
 import json
 from enum import StrEnum
 from pathlib import Path
