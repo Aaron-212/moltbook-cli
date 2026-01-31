@@ -310,6 +310,34 @@ class MoltbookAPI:
     def list_moderators(self, submolt_name: str) -> Dict[str, Any]:
         return self._request("GET", f"/submolts/{submolt_name}/moderators")
 
+    # DMs
+    def check_dms(self) -> Dict[str, Any]:
+        return self._request("GET", "/agents/dm/check")
+
+    def list_dm_requests(self) -> Dict[str, Any]:
+        return self._request("GET", "/agents/dm/requests")
+
+    def approve_dm_request(self, conversation_id: str) -> Dict[str, Any]:
+        return self._request("POST", f"/agents/dm/requests/{conversation_id}/approve")
+
+    def list_conversations(self) -> Dict[str, Any]:
+        return self._request("GET", "/agents/dm/conversations")
+
+    def get_conversation(self, conversation_id: str) -> Dict[str, Any]:
+        return self._request("GET", f"/agents/dm/conversations/{conversation_id}")
+
+    def send_dm(self, conversation_id: str, message: str) -> Dict[str, Any]:
+        return self._request(
+            "POST",
+            f"/agents/dm/conversations/{conversation_id}/send",
+            json={"message": message},
+        )
+
+    def request_dm(self, to_agent: str, message: str) -> Dict[str, Any]:
+        return self._request(
+            "POST", "/agents/dm/request", json={"to": to_agent, "message": message}
+        )
+
 
 def print_json(data: Any):
     """Print JSON with syntax highlighting."""
@@ -723,6 +751,87 @@ def mod_list(submolt_name: str):
     api = MoltbookAPI()
     try:
         print_json(api.list_moderators(submolt_name))
+    except Exception as e:
+        console.print(f"[error]Error:[/error] {e}")
+
+
+# DM Group
+dm_app = typer.Typer(help="Direct Message operations")
+app.add_typer(dm_app, name="dm")
+
+
+@dm_app.command("check")
+def dm_check():
+    """Check for pending requests and unread messages."""
+    api = MoltbookAPI()
+    try:
+        print_json(api.check_dms())
+    except Exception as e:
+        console.print(f"[error]Error:[/error] {e}")
+
+
+@dm_app.command("requests")
+def dm_requests():
+    """List pending DM requests."""
+    api = MoltbookAPI()
+    try:
+        print_json(api.list_dm_requests())
+    except Exception as e:
+        console.print(f"[error]Error:[/error] {e}")
+
+
+@dm_app.command("approve")
+def dm_approve(conversation_id: str = typer.Argument(..., help="Conversation ID")):
+    """Approve a DM request."""
+    api = MoltbookAPI()
+    try:
+        print_json(api.approve_dm_request(conversation_id))
+    except Exception as e:
+        console.print(f"[error]Error:[/error] {e}")
+
+
+@dm_app.command("conversations")
+def dm_conversations():
+    """List active DM conversations."""
+    api = MoltbookAPI()
+    try:
+        print_json(api.list_conversations())
+    except Exception as e:
+        console.print(f"[error]Error:[/error] {e}")
+
+
+@dm_app.command("get")
+def dm_get(conversation_id: str = typer.Argument(..., help="Conversation ID")):
+    """Get messages from a conversation."""
+    api = MoltbookAPI()
+    try:
+        print_json(api.get_conversation(conversation_id))
+    except Exception as e:
+        console.print(f"[error]Error:[/error] {e}")
+
+
+@dm_app.command("send")
+def dm_send(
+    conversation_id: str = typer.Argument(..., help="Conversation ID"),
+    message: str = typer.Argument(..., help="Message content"),
+):
+    """Send a message in a conversation."""
+    api = MoltbookAPI()
+    try:
+        print_json(api.send_dm(conversation_id, message))
+    except Exception as e:
+        console.print(f"[error]Error:[/error] {e}")
+
+
+@dm_app.command("request")
+def dm_request(
+    to: str = typer.Option(..., help="Agent name to request DM with"),
+    message: str = typer.Option(..., help="Initial message"),
+):
+    """Request a new DM conversation."""
+    api = MoltbookAPI()
+    try:
+        print_json(api.request_dm(to, message))
     except Exception as e:
         console.print(f"[error]Error:[/error] {e}")
 
