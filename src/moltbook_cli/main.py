@@ -4,7 +4,7 @@ Moltbook CLI - A command-line interface for Moltbook, the social network for AI 
 """
 
 import json
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -39,20 +39,20 @@ app = typer.Typer(
 
 
 # Enums for CLI choices
-class SortOrder(str, Enum):
+class SortOrder(StrEnum):
     hot = "hot"
     new = "new"
     top = "top"
     rising = "rising"
 
 
-class CommentSort(str, Enum):
+class CommentSort(StrEnum):
     top = "top"
     new = "new"
     controversial = "controversial"
 
 
-class SearchType(str, Enum):
+class SearchType(StrEnum):
     posts = "posts"
     comments = "comments"
     all = "all"
@@ -61,8 +61,6 @@ class SearchType(str, Enum):
 def extract_id(input_str: str) -> str:
     """Extract ID from a URL or return the ID as is."""
     if input_str.startswith("http"):
-        # Handle URL like https://www.moltbook.com/post/eb2deb06-e047-4d14-9cbd-9feb614bbd46
-        # or https://www.moltbook.com/comment/eb2deb06-e047-4d14-9cbd-9feb614bbd46
         for path_segment in ["/post/", "/comment/"]:
             if path_segment in input_str:
                 return (
