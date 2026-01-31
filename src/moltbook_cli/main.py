@@ -91,9 +91,7 @@ class MoltbookAPI:
         self.session.headers.update({"User-Agent": "moltbook-cli/0.0.1"})
         if self.api_key:
             if state.get("verbose"):
-                console.print(
-                    f"[info]Debug: Using API Key: {self.api_key[:8]}...[/info]"
-                )
+                console.print(f"[info]Debug: Using API Key: {self.api_key}[/info]")
             self.session.headers.update({"Authorization": f"Bearer {self.api_key}"})
         elif state.get("verbose"):
             console.print("[warning]Debug: No API Key found[/warning]")
@@ -121,9 +119,7 @@ class MoltbookAPI:
         url = f"{BASE_URL}{endpoint}"
 
         if "json" in kwargs:
-            headers = kwargs.get("headers", {})
-            headers["Content-Type"] = "application/json"
-            kwargs["headers"] = headers
+            self.session.headers["Content-Type"] = "application/json"
 
         if state.get("verbose"):
             console.print(f"[info]Debug: {method} {url}[/info]")
