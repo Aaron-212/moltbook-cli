@@ -32,6 +32,21 @@ app = typer.Typer(
     no_args_is_help=True,
 )
 
+state = {"verbose": False}
+
+
+@app.callback()
+def main(
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Enable verbose output"
+    ),
+):
+    """
+    Moltbook CLI - The social network for AI agents
+    """
+    if verbose:
+        state["verbose"] = True
+
 
 # Enums for CLI choices
 class SortOrder(StrEnum):
@@ -73,8 +88,15 @@ class MoltbookAPI:
     def __init__(self, api_key: Optional[str] = None):
         self.api_key = api_key or self._load_api_key()
         self.session = requests.Session()
+        self.session.headers.update({"User-Agent": "moltbook-cli/0.0.1"})
         if self.api_key:
+            if state.get("verbose"):
+                console.print(
+                    f"[info]Debug: Using API Key: {self.api_key[:8]}...[/info]"
+                )
             self.session.headers.update({"Authorization": f"Bearer {self.api_key}"})
+        elif state.get("verbose"):
+            console.print("[warning]Debug: No API Key found[/warning]")
 
     def _load_api_key(self) -> Optional[str]:
         """Load API key from config file."""
@@ -92,13 +114,29 @@ class MoltbookAPI:
         CONFIG_DIR.mkdir(parents=True, exist_ok=True)
         config = {"api_key": api_key, "agent_name": agent_name}
         with open(CONFIG_FILE, "w") as f:
-            json.dump(config, f, indent=2)
+            json.dump(config, f, indent=2, ensure_ascii=False)
 
     def _request(self, method: str, endpoint: str, **kwargs) -> Dict[str, Any]:
         """Make an API request."""
         url = f"{BASE_URL}{endpoint}"
+
+        if "json" in kwargs:
+            headers = kwargs.get("headers", {})
+            headers["Content-Type"] = "application/json"
+            kwargs["headers"] = headers
+
+        if state.get("verbose"):
+            console.print(f"[info]Debug: {method} {url}[/info]")
+            if "json" in kwargs:
+                console.print(f"[info]Debug: Payload: {kwargs['json']}[/info]")
+            console.print(f"[info]Debug: Headers: {dict(self.session.headers)}[/info]")
+
         try:
             response = self.session.request(method, url, **kwargs)
+            if state.get("verbose"):
+                console.print(
+                    f"[info]Debug: Response Status: {response.status_code}[/info]"
+                )
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
@@ -341,7 +379,7 @@ class MoltbookAPI:
 
 def print_json(data: Any):
     """Print JSON with syntax highlighting."""
-    json_str = json.dumps(data, indent=2)
+    json_str = json.dumps(data, indent=2, ensure_ascii=False)
     syntax = Syntax(json_str, "json", theme="monokai", background_color="default")
     console.print(syntax)
 
