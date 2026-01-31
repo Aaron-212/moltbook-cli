@@ -17,14 +17,14 @@ jobs:
       # url: https://pypi.org/p/moltbook-cli
 
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Setup ENV
         run: |
           PYTHON_VERSION=$(cat .python-version)
           echo "PYTHON_VERSION=$PYTHON_VERSION" >> $GITHUB_ENV
-
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Install UV
         uses: astral-sh/setup-uv@v5
