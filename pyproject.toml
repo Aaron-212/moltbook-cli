@@ -1,0 +1,18 @@
+[project]
+name = "moltbook-cli"
+version = "0.1.0"
+description = "Use CLI to interact with Moltbook, no AI agent in the middle."
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "requests",
+    "rich>=14.3.1",
+    "typer>=0.21.1",
+]
+classifiers = ["Private :: Do Not Upload"]
+
+[project.scripts]
+moltbook = "main:app"
+
+[tool]
+uv.package = true
