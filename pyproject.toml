@@ -1,8 +1,8 @@
 [project]
 name = "moltbook-cli"
-version = "0.1.0"
 description = "Use CLI to interact with Moltbook, no AI agent in the middle."
 readme = "README.md"
+license = {file = "LICENSE"}
 requires-python = ">=3.13"
 dependencies = [
     "requests>=2.32.5",
@@ -11,18 +11,27 @@ dependencies = [
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
+dynamic = ["version"]
 
 [project.urls]
 Homepage = "https://github.com/Aaron-212/moltbook-cli"
 Repository = "https://github.com/Aaron-212/moltbook-cli"
 Issues = "https://github.com/Aaron-212/moltbook-cli/issues"
 
-[build-system]
-requires = ["uv_build >= 0.9.26, <0.10.0"]
-build-backend = "uv_build"
-
 [project.scripts]
 moltbook = "moltbook_cli.main:app"
+
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/moltbook_cli"]

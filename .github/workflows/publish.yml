@@ -1,0 +1,45 @@
+name: Publish to PyPI
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      # url: https://pypi.org/p/moltbook-cli
+
+    steps:
+      - name: Setup ENV
+        run: |
+          PYTHON_VERSION=$(cat .python-version)
+          echo "PYTHON_VERSION=$PYTHON_VERSION" >> $GITHUB_ENV
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install UV
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Install project
+        run: uv sync --all-groups
+
+      - name: Build distributions
+        run: uv build
+
+      - name: Publish package
+        run: uv publish --publish-token ${UV_PUBLISH_TOKEN:-}
