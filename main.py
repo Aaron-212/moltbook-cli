@@ -58,6 +58,22 @@ class SearchType(str, Enum):
     all = "all"
 
 
+def extract_id(input_str: str) -> str:
+    """Extract ID from a URL or return the ID as is."""
+    if input_str.startswith("http"):
+        # Handle URL like https://www.moltbook.com/post/eb2deb06-e047-4d14-9cbd-9feb614bbd46
+        # or https://www.moltbook.com/comment/eb2deb06-e047-4d14-9cbd-9feb614bbd46
+        for path_segment in ["/post/", "/comment/"]:
+            if path_segment in input_str:
+                return (
+                    input_str.split(path_segment)[-1]
+                    .split("?")[0]
+                    .split("#")[0]
+                    .rstrip("/")
+                )
+    return input_str
+
+
 class MoltbookAPI:
     """API client for Moltbook."""
 
@@ -140,31 +156,38 @@ class MoltbookAPI:
         return self._request("GET", "/posts", params=params)
 
     def get_post(self, post_id: str) -> Dict[str, Any]:
+        post_id = extract_id(post_id)
         return self._request("GET", f"/posts/{post_id}")
 
     def delete_post(self, post_id: str) -> Dict[str, Any]:
+        post_id = extract_id(post_id)
         return self._request("DELETE", f"/posts/{post_id}")
 
     # Comments
     def add_comment(
         self, post_id: str, content: str, parent_id: Optional[str] = None
     ) -> Dict[str, Any]:
+        post_id = extract_id(post_id)
         data = {"content": content}
         if parent_id:
-            data["parent_id"] = parent_id
+            data["parent_id"] = extract_id(parent_id)
         return self._request("POST", f"/posts/{post_id}/comments", json=data)
 
     def get_comments(self, post_id: str, sort: str = "top") -> Dict[str, Any]:
+        post_id = extract_id(post_id)
         return self._request("GET", f"/posts/{post_id}/comments", params={"sort": sort})
 
     # Voting
     def upvote_post(self, post_id: str) -> Dict[str, Any]:
+        post_id = extract_id(post_id)
         return self._request("POST", f"/posts/{post_id}/upvote")
 
     def downvote_post(self, post_id: str) -> Dict[str, Any]:
+        post_id = extract_id(post_id)
         return self._request("POST", f"/posts/{post_id}/downvote")
 
     def upvote_comment(self, comment_id: str) -> Dict[str, Any]:
+        comment_id = extract_id(comment_id)
         return self._request("POST", f"/comments/{comment_id}/upvote")
 
     # Submolts
@@ -232,9 +255,11 @@ class MoltbookAPI:
 
     # Moderation
     def pin_post(self, post_id: str) -> Dict[str, Any]:
+        post_id = extract_id(post_id)
         return self._request("POST", f"/posts/{post_id}/pin")
 
     def unpin_post(self, post_id: str) -> Dict[str, Any]:
+        post_id = extract_id(post_id)
         return self._request("DELETE", f"/posts/{post_id}/pin")
 
     def update_submolt_settings(
@@ -354,7 +379,7 @@ def post_create(
 
 
 @post_app.command("get")
-def post_get(post_id: str):
+def post_get(post_id: str = typer.Argument(..., help="Post ID or URL")):
     """Get a single post."""
     api = MoltbookAPI()
     try:
@@ -364,7 +389,7 @@ def post_get(post_id: str):
 
 
 @post_app.command("delete")
-def post_delete(post_id: str):
+def post_delete(post_id: str = typer.Argument(..., help="Post ID or URL")):
     """Delete a post."""
     api = MoltbookAPI()
     try:
@@ -400,10 +425,10 @@ app.add_typer(comment_app, name="comment")
 
 @comment_app.command("add")
 def comment_add(
-    post_id: str,
-    content: str,
+    post_id: str = typer.Argument(..., help="Post ID or URL"),
+    content: str = typer.Argument(..., help="Comment content"),
     parent_id: Optional[str] = typer.Option(
-        None, help="Parent comment ID (for replies)"
+        None, help="Parent comment ID or URL (for replies)"
     ),
 ):
     """Add a comment to a post."""
@@ -416,7 +441,7 @@ def comment_add(
 
 @comment_app.command("get")
 def comment_get(
-    post_id: str,
+    post_id: str = typer.Argument(..., help="Post ID or URL"),
     sort: CommentSort = typer.Option(CommentSort.top, help="Sort order"),
 ):
     """Get comments on a post."""
@@ -433,7 +458,7 @@ app.add_typer(vote_app, name="vote")
 
 
 @vote_app.command("up-post")
-def vote_up_post(post_id: str):
+def vote_up_post(post_id: str = typer.Argument(..., help="Post ID or URL")):
     """Upvote a post."""
     api = MoltbookAPI()
     try:
@@ -443,7 +468,7 @@ def vote_up_post(post_id: str):
 
 
 @vote_app.command("down-post")
-def vote_down_post(post_id: str):
+def vote_down_post(post_id: str = typer.Argument(..., help="Post ID or URL")):
     """Downvote a post."""
     api = MoltbookAPI()
     try:
@@ -453,7 +478,7 @@ def vote_down_post(post_id: str):
 
 
 @vote_app.command("up-comment")
-def vote_up_comment(comment_id: str):
+def vote_up_comment(comment_id: str = typer.Argument(..., help="Comment ID or URL")):
     """Upvote a comment."""
     api = MoltbookAPI()
     try:
@@ -621,7 +646,7 @@ app.add_typer(mod_app, name="mod")
 
 
 @mod_app.command("pin")
-def mod_pin(post_id: str):
+def mod_pin(post_id: str = typer.Argument(..., help="Post ID or URL")):
     """Pin a post."""
     api = MoltbookAPI()
     try:
@@ -631,7 +656,7 @@ def mod_pin(post_id: str):
 
 
 @mod_app.command("unpin")
-def mod_unpin(post_id: str):
+def mod_unpin(post_id: str = typer.Argument(..., help="Post ID or URL")):
     """Unpin a post."""
     api = MoltbookAPI()
     try:
