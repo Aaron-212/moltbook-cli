@@ -1,5 +1,6 @@
 import json
 from enum import StrEnum
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -35,10 +36,27 @@ app = typer.Typer(
 state = {"verbose": False}
 
 
+def version_callback(value: bool):
+    if value:
+        try:
+            pkg_version = version("moltbook-cli")
+            console.print(f"moltbook-cli: [molt]{pkg_version}[/molt]")
+        except PackageNotFoundError:
+            console.print("moltbook-cli: [warning]unknown[/warning]")
+        raise typer.Exit()
+
+
 @app.callback()
 def main(
     verbose: bool = typer.Option(
         False, "--verbose", "-v", help="Enable verbose output"
+    ),
+    version: Optional[bool] = typer.Option(
+        None,
+        "--version",
+        callback=version_callback,
+        is_eager=True,
+        help="Show the version and exit.",
     ),
 ):
     """
