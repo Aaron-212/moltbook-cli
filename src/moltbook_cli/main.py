@@ -48,9 +48,7 @@ def version_callback(value: bool):
 
 @app.callback()
 def main(
-    verbose: bool = typer.Option(
-        False, "--verbose", "-v", help="Enable verbose output"
-    ),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose output"),
     version: Optional[bool] = typer.Option(
         None,
         "--version",
@@ -91,12 +89,7 @@ def extract_id(input_str: str) -> str:
     if input_str.startswith("http"):
         for path_segment in ["/post/", "/comment/"]:
             if path_segment in input_str:
-                return (
-                    input_str.split(path_segment)[-1]
-                    .split("?")[0]
-                    .split("#")[0]
-                    .rstrip("/")
-                )
+                return input_str.split(path_segment)[-1].split("?")[0].split("#")[0].rstrip("/")
     return input_str
 
 
@@ -148,9 +141,7 @@ class MoltbookAPI:
         try:
             response = self.session.request(method, url, **kwargs)
             if state.get("verbose"):
-                console.print(
-                    f"[info]Debug: Response Status: {response.status_code}[/info]"
-                )
+                console.print(f"[info]Debug: Response Status: {response.status_code}[/info]")
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
@@ -163,16 +154,12 @@ class MoltbookAPI:
                         error_msg += f"\n[info]Hint: {hint}[/info]"
                     raise Exception(error_msg) from e
                 except json.JSONDecodeError:
-                    raise Exception(
-                        f"Request failed with status {e.response.status_code}"
-                    ) from e
+                    raise Exception(f"Request failed with status {e.response.status_code}") from e
             raise Exception(f"Request failed: {e}") from e
 
     # Registration
     def register(self, name: str, description: str) -> Dict[str, Any]:
-        return self._request(
-            "POST", "/agents/register", json={"name": name, "description": description}
-        )
+        return self._request("POST", "/agents/register", json={"name": name, "description": description})
 
     def check_status(self) -> Dict[str, Any]:
         return self._request("GET", "/agents/status")
@@ -192,9 +179,7 @@ class MoltbookAPI:
             data["url"] = url
         return self._request("POST", "/posts", json=data)
 
-    def get_feed(
-        self, sort: str = "hot", limit: int = 25, submolt: Optional[str] = None
-    ) -> Dict[str, Any]:
+    def get_feed(self, sort: str = "hot", limit: int = 25, submolt: Optional[str] = None) -> Dict[str, Any]:
         params = {"sort": sort, "limit": limit}
         if submolt:
             params["submolt"] = submolt
@@ -209,9 +194,7 @@ class MoltbookAPI:
         return self._request("DELETE", f"/posts/{post_id}")
 
     # Comments
-    def add_comment(
-        self, post_id: str, content: str, parent_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+    def add_comment(self, post_id: str, content: str, parent_id: Optional[str] = None) -> Dict[str, Any]:
         post_id = extract_id(post_id)
         data = {"content": content}
         if parent_id:
@@ -236,9 +219,7 @@ class MoltbookAPI:
         return self._request("POST", f"/comments/{comment_id}/upvote")
 
     # Submolts
-    def create_submolt(
-        self, name: str, display_name: str, description: str
-    ) -> Dict[str, Any]:
+    def create_submolt(self, name: str, display_name: str, description: str) -> Dict[str, Any]:
         data = {"name": name, "display_name": display_name, "description": description}
         return self._request("POST", "/submolts", json=data)
 
@@ -262,15 +243,11 @@ class MoltbookAPI:
         return self._request("DELETE", f"/agents/{agent_name}/follow")
 
     # Feed
-    def get_personalized_feed(
-        self, sort: str = "hot", limit: int = 25
-    ) -> Dict[str, Any]:
+    def get_personalized_feed(self, sort: str = "hot", limit: int = 25) -> Dict[str, Any]:
         return self._request("GET", "/feed", params={"sort": sort, "limit": limit})
 
     # Search
-    def search(
-        self, query: str, search_type: str = "all", limit: int = 20
-    ) -> Dict[str, Any]:
+    def search(self, query: str, search_type: str = "all", limit: int = 20) -> Dict[str, Any]:
         params = {"q": query, "type": search_type, "limit": limit}
         return self._request("GET", "/search", params=params)
 
@@ -281,9 +258,7 @@ class MoltbookAPI:
     def get_agent_profile(self, agent_name: str) -> Dict[str, Any]:
         return self._request("GET", "/agents/profile", params={"name": agent_name})
 
-    def update_profile(
-        self, description: Optional[str] = None, metadata: Optional[Dict] = None
-    ) -> Dict[str, Any]:
+    def update_profile(self, description: Optional[str] = None, metadata: Optional[Dict] = None) -> Dict[str, Any]:
         data = {}
         if description:
             data["description"] = description
@@ -323,9 +298,7 @@ class MoltbookAPI:
             data["theme_color"] = theme_color
         return self._request("PATCH", f"/submolts/{submolt_name}/settings", json=data)
 
-    def upload_submolt_avatar(
-        self, submolt_name: str, file_path: str
-    ) -> Dict[str, Any]:
+    def upload_submolt_avatar(self, submolt_name: str, file_path: str) -> Dict[str, Any]:
         with open(file_path, "rb") as f:
             return self._request(
                 "POST",
@@ -334,9 +307,7 @@ class MoltbookAPI:
                 data={"type": "avatar"},
             )
 
-    def upload_submolt_banner(
-        self, submolt_name: str, file_path: str
-    ) -> Dict[str, Any]:
+    def upload_submolt_banner(self, submolt_name: str, file_path: str) -> Dict[str, Any]:
         with open(file_path, "rb") as f:
             return self._request(
                 "POST",
@@ -386,9 +357,7 @@ class MoltbookAPI:
         )
 
     def request_dm(self, to_agent: str, message: str) -> Dict[str, Any]:
-        return self._request(
-            "POST", "/agents/dm/request", json={"to": to_agent, "message": message}
-        )
+        return self._request("POST", "/agents/dm/request", json={"to": to_agent, "message": message})
 
 
 def print_json(data: Any):
@@ -414,9 +383,7 @@ def register(name: str, description: str):
             api._save_config(api_key, agent_name)
             console.print(f"\n[success]✓ Credentials saved to {CONFIG_FILE}[/success]")
             console.print(f"[info]✓ Claim URL:[/info] {result['agent']['claim_url']}")
-            console.print(
-                f"[info]✓ Verification code:[/info] {result['agent']['verification_code']}"
-            )
+            console.print(f"[info]✓ Verification code:[/info] {result['agent']['verification_code']}")
     except Exception as e:
         console.print(f"[error]Error:[/error] {e}")
 
@@ -476,9 +443,7 @@ def feed(
     sort: SortOrder = typer.Option(SortOrder.hot, help="Sort order"),
     limit: int = typer.Option(25, help="Number of posts"),
     submolt: Optional[str] = typer.Option(None, help="Filter by submolt"),
-    personalized: bool = typer.Option(
-        False, "--personalized", help="Get personalized feed"
-    ),
+    personalized: bool = typer.Option(False, "--personalized", help="Get personalized feed"),
 ):
     """Get feed of posts."""
     api = MoltbookAPI()
@@ -500,9 +465,7 @@ app.add_typer(comment_app, name="comment")
 def comment_add(
     post_id: str = typer.Argument(..., help="Post ID or URL"),
     content: str = typer.Argument(..., help="Comment content"),
-    parent_id: Optional[str] = typer.Option(
-        None, help="Parent comment ID or URL (for replies)"
-    ),
+    parent_id: Optional[str] = typer.Option(None, help="Parent comment ID or URL (for replies)"),
 ):
     """Add a comment to a post."""
     api = MoltbookAPI()
@@ -748,11 +711,7 @@ def mod_settings(
     """Update submolt settings."""
     api = MoltbookAPI()
     try:
-        print_json(
-            api.update_submolt_settings(
-                submolt_name, description, banner_color, theme_color
-            )
-        )
+        print_json(api.update_submolt_settings(submolt_name, description, banner_color, theme_color))
     except Exception as e:
         console.print(f"[error]Error:[/error] {e}")
 

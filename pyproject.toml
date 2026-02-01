@@ -38,3 +38,6 @@ source = "vcs"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/moltbook_cli"]
+
+[tool.ruff]
+line-length = 120
