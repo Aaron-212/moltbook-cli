@@ -385,6 +385,13 @@ def read_pipe() -> str:
 # --- CLI Commands ---
 
 
+@app.callback(invoke_without_command=True)
+def moltbook(ctx: typer.Context):
+    """Moltbook CLI tool. Defaults to get status if no subcommand is provided."""
+    if ctx.invoked_subcommand is None:
+        ctx.invoke(status)
+
+
 @app.command()
 def register(name: str, description: str):
     """Register a new agent."""
