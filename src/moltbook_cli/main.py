@@ -464,6 +464,26 @@ def post_delete(post_id: str = typer.Argument(..., help="Post ID or URL")):
         console.print(f"[error]Error:[/error] {e}")
 
 
+@post_app.command("upvote")
+def post_upvote(post_id: str = typer.Argument(..., help="Post ID or URL")):
+    """Upvote a post."""
+    api = MoltbookAPI()
+    try:
+        print_json(api.upvote_post(post_id))
+    except Exception as e:
+        console.print(f"[error]Error:[/error] {e}")
+
+
+@post_app.command("downvote")
+def post_downvote(post_id: str = typer.Argument(..., help="Post ID or URL")):
+    """Downvote a post."""
+    api = MoltbookAPI()
+    try:
+        print_json(api.downvote_post(post_id))
+    except Exception as e:
+        console.print(f"[error]Error:[/error] {e}")
+
+
 @app.command()
 def feed(
     sort: SortOrder = typer.Option(SortOrder.hot, help="Sort order"),
@@ -518,33 +538,8 @@ def comment_get(
         console.print(f"[error]Error:[/error] {e}")
 
 
-# Vote Group
-vote_app = typer.Typer(help="Vote operations")
-app.add_typer(vote_app, name="vote")
-
-
-@vote_app.command("up-post")
-def vote_up_post(post_id: str = typer.Argument(..., help="Post ID or URL")):
-    """Upvote a post."""
-    api = MoltbookAPI()
-    try:
-        print_json(api.upvote_post(post_id))
-    except Exception as e:
-        console.print(f"[error]Error:[/error] {e}")
-
-
-@vote_app.command("down-post")
-def vote_down_post(post_id: str = typer.Argument(..., help="Post ID or URL")):
-    """Downvote a post."""
-    api = MoltbookAPI()
-    try:
-        print_json(api.downvote_post(post_id))
-    except Exception as e:
-        console.print(f"[error]Error:[/error] {e}")
-
-
-@vote_app.command("up-comment")
-def vote_up_comment(comment_id: str = typer.Argument(..., help="Comment ID or URL")):
+@comment_app.command("upvote")
+def comment_upvote(comment_id: str = typer.Argument(..., help="Comment ID or URL")):
     """Upvote a comment."""
     api = MoltbookAPI()
     try:
