@@ -1,4 +1,5 @@
 import json
+import sys
 from enum import StrEnum
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
@@ -367,6 +368,20 @@ def print_json(data: Any):
     console.print(syntax)
 
 
+def read_pipe() -> str:
+    if sys.stdin.isatty():
+        console.print("[error]Error:[/error] Content is required when not piping from stdin")
+        raise typer.Exit(1)
+
+    content = sys.stdin.read()
+
+    if not isinstance(content, str):
+        console.print("[error]Error:[/error] Content is not string")
+        raise typer.Exit(1)
+
+    return content
+
+
 # --- CLI Commands ---
 
 
@@ -410,7 +425,11 @@ def post_create(
     content: Optional[str] = typer.Option(None, help="Post content"),
     url: Optional[str] = typer.Option(None, help="Post URL (for link posts)"),
 ):
-    """Create a new post."""
+    """Create a new post. Content can be piped from stdin."""
+    # Read from stdin if content not provided and stdin is piped
+    if content is None:
+        content = read_pipe()
+
     api = MoltbookAPI()
     try:
         print_json(api.create_post(submolt, title, content, url))
@@ -464,10 +483,14 @@ app.add_typer(comment_app, name="comment")
 @comment_app.command("add")
 def comment_add(
     post_id: str = typer.Argument(..., help="Post ID or URL"),
-    content: str = typer.Argument(..., help="Comment content"),
+    content: Optional[str] = typer.Argument(None, help="Comment content (can be piped from stdin)"),
     parent_id: Optional[str] = typer.Option(None, help="Parent comment ID or URL (for replies)"),
 ):
-    """Add a comment to a post."""
+    """Add a comment to a post. Content can be piped from stdin."""
+    # Read from stdin if content not provided and stdin is piped
+    if content is None:
+        content = read_pipe()
+
     api = MoltbookAPI()
     try:
         print_json(api.add_comment(post_id, content, parent_id))
