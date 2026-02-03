@@ -23,7 +23,7 @@ molt_theme = Theme(
         "warning": "yellow",
         "error": "bold red",
         "success": "bold green",
-        "molt": "bold magenta",
+        "molt": "bold dark_orange",
     }
 )
 
