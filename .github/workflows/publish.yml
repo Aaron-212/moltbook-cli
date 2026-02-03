@@ -21,16 +21,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup ENV
-        run: |
-          PYTHON_VERSION=$(cat .python-version)
-          echo "PYTHON_VERSION=$PYTHON_VERSION" >> $GITHUB_ENV
-
       - name: Install UV
         uses: astral-sh/setup-uv@v7
         with:
           enable-cache: false
-          python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install project
         run: uv sync --all-groups
