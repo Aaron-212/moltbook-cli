@@ -2,16 +2,18 @@ import json
 import sys
 from enum import StrEnum
 from importlib.metadata import PackageNotFoundError, version
-from typing import Any
 
 import typer
 from rich.console import Console
+from rich.markdown import Markdown
 from rich.prompt import Prompt
 from rich.syntax import Syntax
 from rich.theme import Theme
+from rich.tree import Tree
 
 from .api import MoltbookAPI
 from .constants import CONFIG_FILE
+from .models.post import Comment, Feed, PostComment
 
 # Custom Rich Theme
 molt_theme = Theme(
@@ -43,11 +45,59 @@ def version_callback(value: bool):
         raise typer.Exit()
 
 
-def print_json(data: Any):
+def print_json(json_str: str):
     """Print JSON with syntax highlighting."""
-    json_str = json.dumps(data, indent=2, ensure_ascii=False)
-    syntax = Syntax(json_str, "json", theme="monokai", background_color="default")
+    formatted_json = json.dumps(json.loads(json_str), indent=2, ensure_ascii=False)
+    syntax = Syntax(formatted_json, "json", theme="monokai", background_color="default")
     console.print(syntax)
+
+
+def print_feed(feed: Feed):
+    for post in feed.posts:
+        console.print(post.id)
+        console.print(
+            f"[dim]m/{post.submolt.name}, posted by u/{post.author.name} at {post.created_at}[/dim]",
+            highlight=False,
+        )
+        console.print(
+            f"[red]{post.upvotes} upvotes[/red] [blue]{post.downvotes} downvotes[/blue] "
+            f"[molt]{post.comment_count} comments[/molt]",
+            highlight=False,
+        )
+        console.print(f"[bold]{post.title}[/bold]", highlight=False)
+        console.print(post.content.splitlines()[0], highlight=False)
+        console.rule(style="dim white")
+
+
+def add_comment_to_tree(tree: Tree, comment: Comment, console: Console, level: int = 0) -> None:
+    content_markdown = Markdown(comment.content)
+
+    with console.capture() as capture:
+        content_markdown = Markdown(comment.content)
+        console.print(comment.id)
+        console.print(
+            f"[dim]posted by u/{comment.author.name} at {comment.created_at}[/dim]",
+            highlight=False,
+        )
+        console.print(
+            f"[red]{comment.upvotes} upvotes[/red] [blue]{comment.downvotes} downvotes[/blue]",
+            highlight=False,
+        )
+        console.print(content_markdown, highlight=False)
+
+    branch = tree.add(capture.get())
+
+    for reply in comment.replies:
+        add_comment_to_tree(branch, reply, console, level + 1)
+
+
+def print_comments(comments: PostComment):
+    tree = Tree(f"[bold underline]{comments.post_title}[/]")
+
+    for comment in comments.comments:
+        add_comment_to_tree(tree, comment, console)
+
+    console.print(tree)
 
 
 def read_pipe() -> str:
@@ -109,14 +159,9 @@ def register(name: str, description: str):
     """Register a new agent."""
     try:
         result = api.register(name, description)
-        print_json(result)
-        if "agent" in result:
-            api_key = result["agent"]["api_key"]
-            agent_name = result["agent"].get("name", name)
-            api._save_config(api_key, agent_name)
-            console.print(f"\n[success]✓ Credentials saved to {CONFIG_FILE}[/success]")
-            console.print(f"[info]✓ Claim URL:[/info] {result['agent']['claim_url']}")
-            console.print(f"[info]✓ Verification code:[/info] {result['agent']['verification_code']}")
+        console.print(f"\n[success]✓ Credentials saved to {CONFIG_FILE}[/success]")
+        console.print(f"[info]✓ Claim URL:[/info] {result.agent.claim_url}")
+        console.print(f"[info]✓ Verification code:[/info] {result.agent.verification_code}")
     except Exception as e:
         console.print(f"[error]Error:[/error] {e}")
 
@@ -125,7 +170,10 @@ def register(name: str, description: str):
 def status():
     """Check claim status."""
     try:
-        print_json(api.check_status())
+        result = api.check_status()
+        console.print(f"[info]Status:[/info] {result.status}")
+        console.print(f"[info]ID:[/info] {result.agent.id}")
+        console.print(f"[info]Name:[/info] {result.agent.name}")
     except Exception as e:
         console.print(f"[error]Error:[/error] {e}")
 
@@ -168,7 +216,22 @@ def post_create(
 def post_get(post_id: str = typer.Argument(..., help="Post ID or URL")):
     """Get a single post."""
     try:
-        print_json(api.get_post(post_id))
+        result = api.get_post(post_id)
+        content_markdown = Markdown(result.post.content)
+        console.print(
+            f"[dim]m/{result.post.submolt.name}, posted by u/{result.post.author.name} "
+            f"at {result.post.created_at}[/dim]",
+            highlight=False,
+        )
+        console.print(
+            f"[red]{result.post.upvotes} upvotes[/red] [blue]{result.post.downvotes} downvotes[/blue] "
+            f"[molt]{result.post.comment_count} comments[/molt]",
+            highlight=False,
+        )
+        console.print(f"[bold]{result.post.title}[/bold]", highlight=False)
+
+        console.print()
+        console.print(content_markdown)
     except Exception as e:
         console.print(f"[error]Error:[/error] {e}")
 
@@ -210,9 +273,11 @@ def feed(
     """Get feed of posts."""
     try:
         if personalized:
-            print_json(api.get_personalized_feed(sort.value, limit))
+            feed = api.get_personalized_feed(sort.value, limit)
         else:
-            print_json(api.get_feed(sort.value, limit, submolt))
+            feed = api.get_personalized_feed(sort.value, limit)
+
+        print_feed(feed)
     except Exception as e:
         console.print(f"[error]Error:[/error] {e}")
 
@@ -250,7 +315,8 @@ def comment_get(
 ):
     """Get comments on a post."""
     try:
-        print_json(api.get_comments(post_id, sort.value))
+        result = api.get_comments(post_id, sort.value)
+        print_comments(result)
     except Exception as e:
         console.print(f"[error]Error:[/error] {e}")
 
