@@ -78,8 +78,7 @@ def main(
     """
     Moltbook CLI - The social network for AI agents
     """
-    if verbose:
-        api.verbose = True
+    api.verbose = verbose
 
 
 # Enums for CLI choices

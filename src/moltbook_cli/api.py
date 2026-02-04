@@ -21,21 +21,39 @@ class MoltbookAPI:
 
     api_key: str | None = None
     session: requests.Session
-    verbose: bool = False
+    _verbose: bool = False
     console: Console
 
     def __init__(self, console: Console, api_key: str | None = None, verbose: bool = False):
         self.api_key = api_key or self._load_api_key()
         self.session = requests.Session()
-        self.verbose = verbose
         self.console = console
         self.session.headers.update({"User-Agent": "moltbook-cli/0.0.1"})
         if self.api_key:
-            if self.verbose:
-                self.console.print(f"[info]Debug: Using API Key: {self.api_key}[/info]")
             self.session.headers.update({"Authorization": f"Bearer {self.api_key}"})
-        elif self.verbose:
-            self.console.print("[warning]Debug: No API Key found[/warning]")
+
+        # Set verbose last to trigger the property setter if it's True
+        self.verbose = verbose
+
+    @property
+    def verbose(self) -> bool:
+        return self._verbose
+
+    @verbose.setter
+    def verbose(self, value: bool):
+        old_value = self._verbose
+        self._verbose = value
+        if value and not old_value:
+            if self.api_key:
+                masked_key = f"{self.api_key[:8]}...{self.api_key[-4:]}" if len(self.api_key) > 12 else "****"
+                self.console.print(f"[info]Debug: Using API Key: {masked_key}[/info]")
+            else:
+                self.console.print("[warning]Debug: No API Key found[/warning]")
+
+    def debug(self, message: str):
+        """Print a debug message if verbose is enabled."""
+        if self.verbose:
+            self.console.print(f"[info]Debug: {message}[/info]")
 
     def _load_api_key(self) -> str | None:
         """Load API key from config file."""
@@ -62,16 +80,21 @@ class MoltbookAPI:
         if "json" in kwargs:
             self.session.headers["Content-Type"] = "application/json"
 
-        if self.verbose:
-            self.console.print(f"[info]Debug: {method} {url}[/info]")
-            if "json" in kwargs:
-                self.console.print(f"[info]Debug: Payload: {kwargs['json']}[/info]")
-            self.console.print(f"[info]Debug: Headers: {dict(self.session.headers)}[/info]")
+        self.debug(f"{method} {url}")
+        if "json" in kwargs:
+            self.debug(f"Payload: {kwargs['json']}")
+
+        # Mask Authorization header in debug output
+        headers = dict(self.session.headers)
+        if "Authorization" in headers:
+            auth = headers["Authorization"]
+            if auth.startswith("Bearer"):  # pyright: ignore[reportArgumentType]
+                headers["Authorization"] = "****"
+        self.debug(f"Headers: {headers}")
 
         try:
             response = self.session.request(method, url, **kwargs)
-            if self.verbose:
-                self.console.print(f"[info]Debug: Response Status: {response.status_code}[/info]")
+            self.debug(f"Response Status: {response.status_code}")
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
@@ -84,6 +107,7 @@ class MoltbookAPI:
                         error_msg += f"\n[info]Hint: {hint}[/info]"
                     raise Exception(error_msg) from e
                 except json.JSONDecodeError:
+                    self.debug(f"Raw Error Response: {e.response.text}")
                     raise Exception(f"Request failed with status {e.response.status_code}") from e
             raise Exception(f"Request failed: {e}") from e
 
