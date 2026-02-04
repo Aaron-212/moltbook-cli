@@ -6,6 +6,7 @@ from typing import Any
 
 import typer
 from rich.console import Console
+from rich.prompt import Prompt
 from rich.syntax import Syntax
 from rich.theme import Theme
 
@@ -137,15 +138,26 @@ app.add_typer(post_app, name="post")
 
 @post_app.command("create")
 def post_create(
-    submolt: str = typer.Option(..., help="Submolt name"),
-    title: str = typer.Option(..., help="Post title"),
+    submolt: str = typer.Option(default="general", help="Submolt name"),
+    title: str | None = typer.Option(None, help="Post title"),
     content: str | None = typer.Option(None, help="Post content"),
     url: str | None = typer.Option(None, help="Post URL (for link posts)"),
+    interactive: bool = typer.Option(False, "--interactive", "-i", help="Interactive mode"),
 ):
     """Create a new post. Content can be piped from stdin."""
+    if interactive:
+        submolt = Prompt.ask("Submolt name", default="general")
+        title = Prompt.ask("Post title")
+        content = Prompt.ask("Post content", default="")
+        url = Prompt.ask("Post URL (for link posts)", default=None)
+
     # Read from stdin if content not provided and stdin is piped
-    if content is None:
+    elif content is None:
         content = read_pipe()
+
+    if title is None:
+        console.print("[error]Error:[/error] Title is required")
+        raise typer.Exit(1)
 
     try:
         print_json(api.create_post(submolt, title, content, url))
@@ -216,10 +228,14 @@ def comment_add(
     post_id: str = typer.Argument(..., help="Post ID or URL"),
     content: str | None = typer.Argument(None, help="Comment content (can be piped from stdin)"),
     parent_id: str | None = typer.Option(None, help="Parent comment ID or URL (for replies)"),
+    interactive: bool = typer.Option(False, "--interactive", "-i", help="Interactive mode"),
 ):
     """Add a comment to a post. Content can be piped from stdin."""
+    if interactive:
+        parent_id = Prompt.ask("Parent comment ID or URL (for replies)", default="")
+        content = Prompt.ask("Post content", default="")
     # Read from stdin if content not provided and stdin is piped
-    if content is None:
+    elif content is None:
         content = read_pipe()
 
     try:
