@@ -3,15 +3,15 @@ name = "moltbook-cli"
 description = "Use CLI to interact with Moltbook, no AI agent in the middle."
 readme = "README.md"
 license = {file = "LICENSE"}
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 dependencies = [
+    "pydantic>=2.12.5",
     "requests>=2.32.5",
     "rich>=14.3.1",
     "typer>=0.21.1",
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
