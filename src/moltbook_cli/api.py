@@ -1,4 +1,5 @@
 import json
+import os
 from typing import Any
 
 import requests
@@ -56,7 +57,12 @@ class MoltbookAPI:
             self.console.print(f"[info]Debug: {message}[/info]")
 
     def _load_api_key(self) -> str | None:
-        """Load API key from config file."""
+        """Load API key from environment variable or config file."""
+        # Prefer environment variable over config file
+        env_api_key = os.getenv("MOLTBOOK_API_KEY")
+        if env_api_key:
+            return env_api_key
+
         if CONFIG_FILE.exists():
             try:
                 with open(CONFIG_FILE, "r") as f:
